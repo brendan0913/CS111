@@ -1,0 +1,26 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab4c_tcp.c: C source file that makes the lab4c_tcp executable
+	Accepts commands from network connection to server and outputs the report to server
+	Opens a TCP connection to the server at the specified address and port
+	Sends and logs my ID number
+	Sends, processes, and logs newline terminated temperature reports over the connection
+	Logs misformatted temperature reports with description of error
+
+lab4c_tls.c: C source file that makes the lab4c_tls executable
+	Opens a TLS connection to the server at the specified address and port
+	Sends and logs my ID number followed by a newline
+	Sends, processes, and logs temperature reports over the connection
+
+Makefile:
+	The default target makes the lab4c_tcp and lab4c_tls executables with compile-time error checking flags -Wall and -Wextra.
+	The clean target removes the lab4c_tcp and lab4c_tls executables and the tar.gz tarball.
+	The dist target makes the tarball for submission.
+
+README: Contains information about the files in the submission tarball
+
+Resources used:
+ - Discussion slides
+ - https://www.openssl.org/docs/manmaster/man7/ssl.html

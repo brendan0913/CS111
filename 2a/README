@@ -1,0 +1,149 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab2-add.c: the c source file that makes the lab2-add exectuable
+    Implements and tests a shared variable add function, takes command line options --threads=num_threads, --iterations=num_iterations, 
+        --yield, and --sync=sync_option (mutex, spinlock, compare-and-swap)
+    Creates the number of threads, each of which increment and decrement a shared counter num_iterations times
+    Without synchronization of the threads, there are race conditions, evidenced more clearly with 
+    the --yield option and sched_yield() (which causes the thread to immediately yield before the critical section, and thus the
+    counter is not equal to 0 for tests without synchronization.
+    However, with synchronization (using the --sync options mutex, spinlock, and compare-and-swap),
+    the counter is always 0 at the end, showing the importance of using synchronization primitives with threads.
+    
+QUESTIONS for lab2-add.c
+QUESTION 2.1.1 - causing conflicts:
+Why does it take many iterations before errors are seen?
+Why does a significantly smaller number of iterations so seldom fail?
+    It takes many iterations before errors are seen because for a small number of iterations, a thread is able to complete its run (due to
+    only having to go through a small number of iterations) before another thread is created, and so race conditions that would make
+    the output non-deterministic do not occur. With a large number of iterations, threads interupt each other because while threads get created, 
+    other threads are still running operations for the large number of iterations, so race conditions occur where threads access the shared counter
+    at the same time.
+    Running the program with a significantly small number of iterations so seldom fails because there is a very low chance of race conditions
+    due to threads finishing before others are created, and so threads seldom access the shared counter at the same time with a small number
+    of iterations.
+
+QUESTION 2.1.2 - cost of yielding:
+Why are the --yield runs so much slower?
+Where is the additional time going?
+Is it possible to get valid per-operation timings if we are using the --yield option?
+If so, explain how. If not, explain why not.
+    --yield runs so much slower because of context switching when a thread yields, and this context switching is where the additional time goes
+    into. From the sched_yield() man page, sched_yield() causes the calling thread to relinquish the CPU and moves this thread to the end of the 
+    queue, and a new thread gets to run. Thus, when sched_yield() is called, the thread's registers must be saved on the kernel stack and restored
+    later, and this is where the additional time goes into.
+    It is not possible to get valid per-operation timings if we use the --yield option because the time per-operation will be inflated due to this time
+    being for the yield context switch and not for the add operation.
+
+QUESTION 2.1.3 - measurement errors:
+Why does the average cost per operation drop with increasing iterations?
+If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
+    The average cost per operation drops with increasing iterations because while the number of operations increases due to the number of iterations,
+    the time it takes for thread creation stays the same, and this time impacts the total runtime less when we increase the number of iterations.
+    If the cost per iteration is a function of the number of iterations, we can know what the correct cost is by increasing the number of iterations 
+    (to infinity) until the cost per operation reaches a stable solution.
+
+QUESTION 2.1.4 - costs of serialization:
+Why do all of the options perform similarly for low numbers of threads?
+Why do the three protected operations slow down as the number of threads rises?
+    All options perform similarly for low number of threads due to there being low contention for the lock, so each thread can get the lock quickly 
+    (as opposed to a high number of threads all waiting for the lock to become available).
+    As the number of threads rises, all three protected operations have worse performance due to high contention (more threads wait for the lock
+    to become available, so the time for waiting is greater which hinders performance). If the mutex is already locked by another thread, 
+    then the calling thread blocks, so more threads will block with a higher number of threads. Spin-locks repeatedly spin to check if the lock is
+    available, which hinders performance due to high contention, and the compare-and-swap method also has threads wait for a lock.
+
+lab2-list.c: the c source file that makes the lab2-list exectuable
+    Tests a sorted, circular, doubly linked list (implemented in SortedList.c with insert, delete, lookup, and length functions), takes command line options --threads=num_threads, --iterations=num_iterations, 
+        --yield=yield_options (yield at insert, delete, or lookup), and --sync=sync_option (mutex or spinlock)
+    Creates the number of threads, each of which insert elements into the shared list (initially empty), get the length of the list, lookup previously inserted elements,
+        and deletes the previously found elements.
+        If any corruption in the list is found (like being unable to find a previously inserted element), then log the corruption and exit(2)
+    Without synchronization of the threads, there are race conditions, evidenced more clearly with 
+    the --yield option and sched_yield() (which causes the thread to immediately yield before critical sections in the specified 
+    SortedList funuctions, using --yield=yield_option), and thus corruption is more likely to be found and the length of the list at the end 
+        of theh run will not be 0.
+    However, with synchronization (using the --sync options mutex and spinlock),
+    the length of the list is always 0 at the end (and there is no other corruption), showing the importance of using synchronization primitives with threads.
+
+QUESTIONS for lab2_list.c
+QUESTION 2.2.1 - scalability of Mutex
+Compare the variation in time per mutex-protected operation vs the number of threads 
+    in Part-1 (adds) and Part-2 (sorted lists).
+Comment on the general shapes of the curves, and explain why they have this shape.
+Comment on the relative rates of increase and differences in the shapes of the curves, 
+and offer an explanation for these differences.
+    In Part-1 (add), the per operation cost curve for mutex increases but then reaches a horizontal asymptote as the number of threads increases, 
+    whereas the Part-2 (list) curve for the mutex seems to be linear. Both increase because as the number of threads increases, there is 
+    higher contention and so the average cost per operation increases as more threads are waiting longer for locks.
+    The add mutex curve looks like a logartihmic function, unlike the curve for the list which looks like a line.
+    The rate of increase for the list mutex curve is more than for the add mutex curve, which stops increasing as the
+    number of threads increases and increases from a cost per operation of 30 ns to 100 ns; on the other hand, the list mutex curve goes from a 
+    cost per operation of less than 1 ns to over 200 ns over the same amount of threads. This difference in rate of increase is because in the add case, 
+    less synchronization is needed just to add to a counter (the number of operations is always the same). However, for the list case, the number
+    of operations increases due to having to do inserts, deletes, lookups, and finding the length for each thread (and the number of threads 
+    increases), and so there is higher contention with all the threads having to wait before the critical sections.
+
+QUESTION 2.2.2 - scalability of spin locks
+Compare the variation in time per protected operation vs the number of threads for list operations 
+    protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
+Comment on the relative rates of increase and differences in the shapes of the curves, 
+and offer an explanation for these differences.
+    For the list operations, in both cases of the mutex and spin-lock, the curves are increasing and relatively linear. This is due to contention 
+    (as the number of threads increases, more threads wait longer for the locks to be available). However, the slope of the spin-lock curve is 
+    higher than the slope of the mutex curve for a large number of threads. This is because spin-locks waste more CPU time having the threads 
+    constantly spinning waiting to unlock the lock, whereas mutexes simply block the thread waiting for the mutex, so CPU cycles are not wasted,
+    and so the spin-lock curve has the steeper slope for large number of threads.
+
+SortedList.h: a header file describing the interfaces for linked list operations
+
+SortedList.c:  a C module that implements insert, delete, lookup, and length methods
+    for a sorted doubly linked list, including correct placement of yield calls at the critical sections
+
+Makefile: 
+    The default target compiles the lab2-add and lab2-list programs using GCC and 
+        compile-time error checking flags -Wall and -Wextra, along with -pthread to compile with <pthread.h>.
+    The clean target removes the lab2-add and lab2-list executables and .tar.gz tarball.
+    The dist target creates the tarball of the files for submission.
+    The tests target runs tests for lab2_add and lab2_list and appends each result to the respective .csv files
+    The graphs target runs the supplied data reduction scripts (lab2_add.gp and lab2_list.gp), which graph
+        the tests from the .csv files and creates .png files for each graph
+
+lab2_add.csv: Contains results for all lab2_add tests
+    Tests include running lab2_add:
+        - thread range (1,2,4,8,10,12) and iterations (100, 1000, 10000, 100000)
+        - with --yield option, thread range (2,4,8,12) and iterations (10,20,40,80,100,1000,10000,100000)
+        - with --yield , --sync options m, s, c, thread range (2,4,8,12) and iterations 10000, 1000 for spin-lock
+        - without --yield option, with -sync options m, s, c, thread range (1,2,4,8,12)a nd iterations (10000)
+
+lab2_list.csv: Contains results for all lab2_list tests
+    Tests include running lab2_list:
+        - single thread, iterations (10, 100, 1000, 10000, 20000)
+        - parallel threads, thread range (2,4,8,12) and iterations (1,10,100,1000)
+        - combinations of yield options --yield=i, d, il, dl for thread range (2,4,8,12) and iterations (1,2,4,8,16,32)
+        - combinations of yield options i, d, il, dl and sync options m and s for 12 threads, 32 iterations
+        - startup costs, sync options m and s, thread range (1,2,4,8,16,24) and 1000 iterations
+
+.png files: graphs created by running the supplied data reduction scripts (which use gnuplot)
+    lab2_add-1.png: threads and iterations required to generate a failure (with and without yields)
+    lab2_add-2.png: average time per operation with and without yields.
+    lab2_add-3.png: average time per (single threaded) operation vs. the number of iterations.
+    lab2_add-4.png: threads and iterations that can run successfully with yields under each of the synchronization options.
+    lab2_add-5.png: average time per (protected) operation vs. the number of threads.
+
+    lab2_list-1.png: average time per (single threaded) unprotected operation vs. number of iterations 
+        (illustrating the correction of the per-operation cost for the list length)
+    lab2_list-2.png: threads and iterations required to generate a failure (with and without yields)
+    lab2_list-3.png: iterations that can run (protected) without failure
+    lab2_list-4.png: (length-adjusted) cost per operation vs the number of threads for the various synchronization options
+
+README: Contains information about the submission files in the tarball and answers
+    to the questions on the spec about lab2_add and lab2_list
+
+Resources used:
+Discussion slides
+OSTEP textbook C27-28 (Thread APIs)
+https://gcc.gnu.org/onlinedocs/gcc-4.1.1/gcc/Atomic-Builtins.html for spin-lock and compare-and-swap methods
+https://stackoverflow.com/questions/19724346/generate-random-characters-in-c to generate random keys

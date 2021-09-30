@@ -1,0 +1,27 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab3a.c: C source file that makes the lab3a executable
+    Takes the name of a file system image as a command line argument
+    Analyzes the provided file system image and produces CSV summaries of the following to stdout:
+        - superblock
+        - group (assumes a single group)
+        - free block entries
+        - free I-node entries
+        - I-node
+        - directory entries
+        - indirect block references
+
+Makefile:
+    The default target makes the lab3a executable with compile-time error checking flags -Wall and -Wextra.
+    The clean target removes the lab3a executable and the tar.gz tarball.
+    The dist target makes the tarball for submission.
+
+README: Contains information about the files in the submission tarball
+
+Resources used:
+- Discussion slides
+- http://www.science.smith.edu/~nhowe/Teaching/csc262/oldlabs/ext2.html
+- For determining file type: https://pubs.opengroup.org/onlinepubs/7908799/xsh/sysstat.h.html
+- For formatting time: https://www.geeksforgeeks.org/strftime-function-in-c/#:~:text=strftime()%20is%20a%20function,hold%20the%20time%20and%20date

@@ -1,0 +1,18 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab3b.py: Python source file that makes the lab3b executable
+    Accepts a single command line argument which is a file system summary in 
+        the same csv format as project 3a.
+    Analyzes the csv file system summary and reports all inconsistencies to stdout.
+    
+Makefile:
+    The default target makes a lab3b link and prints a success message.
+    The clean target removes the lab3b link and the tar.gz tarball.
+    The dist target makes the tarball for submission.
+
+README: Contains information about the files in the submission tarball
+
+Resources used:
+- Discussion slides

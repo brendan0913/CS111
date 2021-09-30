@@ -1,0 +1,25 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab1a.c: the c source file that makes the lab1a executable
+    The program puts the keyboard into noncanonical echo mode, 
+    thus creating a character-at-a-time, full duplex terminal I/O.
+    With the --shell argument, the program passes input/output between terminal 
+    (the parent process) and a shell (the child process). The child process execs a
+    shell and takes standard input from a pipe from the terminal and outputs to 
+    the terminal via another pipe.
+
+Makefile: 
+    The default target compiles the lab1a program using GCC and 
+        compile-time error checking flags -Wall and -Wextra.
+    The clean target removes the executable lab1a and .tar.gz tarball.
+    The dist target creates the tarball of the files for submission.
+
+README: Contains information about the submission files in the tarball
+
+Resources used:
+For the project overall:
+    - man pages for termios, poll, pipe, waitpid, exec, close, dup2, kill, fork
+For understanding how to set the termios attributes
+    - https://www.gnu.org/software/libc/manual/html_node/Noncanon-Example.html

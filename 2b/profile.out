@@ -1,0 +1,304 @@
+Total: 1196 samples
+    1056  88.3%  88.3%     1196 100.0% run_threads
+      44   3.7%  92.0%       44   3.7% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:204
+      19   1.6%  93.6%       19   1.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1734
+      11   0.9%  94.5%       79   6.6% SortedList_insert
+      10   0.8%  95.3%       10   0.8% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1734
+       9   0.8%  96.1%       60   5.0% SortedList_lookup
+       8   0.7%  96.7%        8   0.7% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:161
+       7   0.6%  97.3%        7   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:165
+       7   0.6%  97.9%        7   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:211
+       7   0.6%  98.5%        7   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1734
+       5   0.4%  98.9%        5   0.4% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:212
+       5   0.4%  99.3%        5   0.4% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1734
+       3   0.3%  99.6%        3   0.3% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1733
+       2   0.2%  99.7%        2   0.2% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:206
+       1   0.1%  99.8%        1   0.1% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:205
+       1   0.1%  99.9%        1   0.1% __GI___clock_gettime
+       1   0.1% 100.0%        1   0.1% _init
+       0   0.0% 100.0%     1196 100.0% ?? /usr/src/debug////////glibc-2.17-c758a686/misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:118
+       0   0.0% 100.0%     1196 100.0% start_thread
+ROUTINE ====================== run_threads in /u/cs/ugrad/rossmang/cs111/2b/lab2_list.c
+  1056   1196 Total samples (flat / cumulative)
+     .      .   43: 
+     .      .   44: int hash_function(const char* key){
+     .      .   45:     return ((int) *key) % num_of_lists;
+     .      .   46: }
+     .      .   47: 
+---
+     .      .   48: void *run_threads(void* arg){
+     .      .   49:     int i;
+     .      .   50:     // arg is the thread id, so the thread only handles own elements
+     .      .   51:     // each thread inserts num_of_iterations elements
+     .      .   52:     int current = *((int*) arg) * num_of_iterations;
+     .      .   53:     SortedListElement_t* to_be_deleted;
+     .      .   54:     struct timespec start, end;
+     .      .   55:     long long waittime = 0;
+     .      .   56:     // Insert into sublists of single, shared list
+     .      .   57:     for (i = current; i < current + num_of_iterations; i++){
+     .      .   58:         int hash = hash_function(elements[i].key);
+     .      .   59:         if (mutex_sync){
+     .      .   60:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .   61:             pthread_mutex_lock(&mutexes[hash]);
+     .      .   62:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .   63:             SortedList_insert(&list[hash], &elements[i]);
+     .      .   64:             pthread_mutex_unlock(&mutexes[hash]);
+     .      .   65:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .   66:         }
+     .      .   67:         else if (spinlock_sync){
+     .      .   68:             clock_gettime(CLOCK_MONOTONIC, &start);
+   564    564   69:             while (__sync_lock_test_and_set(&locks[hash], 1));
+     .      1   70:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .     79   71:             SortedList_insert(&list[hash], &elements[i]);
+     .      .   72:             __sync_lock_release(&locks[hash]);
+     .      .   73:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .   74:         }
+     .      .   75:         else{
+     .      .   76:             SortedList_insert(&list[hash], &elements[i]);
+     .      .   77:         }
+     .      .   78:     }
+     .      .   79:     // Get list length (and check for corruption)
+     .      .   80:     // If length of list is less than the num of iterations or -1, there is corruption
+     .      .   81:     int length = 0, sublength = 0;
+     .      .   82:     for (i = 0; i < num_of_lists; i++){
+     .      .   83:         if (mutex_sync){
+     .      .   84:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .   85:             pthread_mutex_lock(&mutexes[i]);
+     .      .   86:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .   87:             sublength = SortedList_length(&list[i]);
+     .      .   88:             if (sublength == -1){
+     .      .   89:                 fprintf(stderr, "Corruption: length of list is -1; strerror reports: %s\n", strerror(errno));
+     .      .   90:                 exit(2);
+     .      .   91:             }
+     .      .   92:             length += sublength;
+     .      .   93:             pthread_mutex_unlock(&mutexes[i]);
+     .      .   94:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .   95:         }
+     .      .   96:         else if (spinlock_sync){
+     .      .   97:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .   98:             while (__sync_lock_test_and_set(&locks[i], 1));
+     .      .   99:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .  100:             sublength = SortedList_length(&list[i]);
+     .      .  101:             if (sublength == -1){
+     .      .  102:                 fprintf(stderr, "Corruption: length of list is -1; strerror reports: %s\n", strerror(errno));
+     .      .  103:                 exit(2);
+     .      .  104:             }
+     .      .  105:             length += sublength;
+     .      .  106:             __sync_lock_release(&locks[i]);
+     .      .  107:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .  108:         }
+     .      .  109:         else {
+     .      .  110:             sublength = SortedList_length(&list[i]);
+     .      .  111:             if (sublength == -1){
+     .      .  112:                 fprintf(stderr, "Corruption: length of list is -1; strerror reports: %s\n", strerror(errno));
+     .      .  113:                 exit(2);
+     .      .  114:             }
+     .      .  115:             length += sublength;
+     .      .  116:         }
+     .      .  117:     }
+     .      .  118:     if (length < num_of_iterations){
+     .      .  119:         fprintf(stderr, "Corruption: length of list is less than number of iterations; strerror reports: %s\n", strerror(errno));
+     .      .  120:         exit(2);
+     .      .  121:     }
+     .      .  122: 
+     .      .  123:     // Lookup and delete each key that was previously inserted
+     .      .  124:     // If corruption is found (e.g., a key that was inserted cannot be found), exit(2)
+     .      .  125:     for (i = current; i < current + num_of_iterations; i++){
+     .      .  126:         int hash = hash_function(elements[i].key);
+     .      .  127:         if (mutex_sync){
+     .      .  128:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .  129:             pthread_mutex_lock(&mutexes[hash]);
+     .      .  130:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .  131:             to_be_deleted = SortedList_lookup(&list[hash], elements[i].key);
+     .      .  132:             if (to_be_deleted == NULL){
+     .      .  133:                 fprintf(stderr, "Corruption: cannot lookup previously inserted key; strerror reports: %s\n", strerror(errno));
+     .      .  134:                 exit(2);
+     .      .  135:             }
+     .      .  136:             // SortedList_delete returns 1 on corruption
+     .      .  137:             if (SortedList_delete(to_be_deleted)){
+     .      .  138:                 fprintf(stderr, "Corruption: cannot delete previously found key; strerror reports: %s\n", strerror(errno));
+     .      .  139:                 exit(2);     
+     .      .  140:             }
+     .      .  141:             pthread_mutex_unlock(&mutexes[hash]);
+     .      .  142:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .  143:         }
+     .      .  144:         else if (spinlock_sync){
+     .      .  145:             clock_gettime(CLOCK_MONOTONIC, &start);
+   492    492  146:             while (__sync_lock_test_and_set(&locks[hash], 1));
+     .      .  147:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .     60  148:             to_be_deleted = SortedList_lookup(&list[hash], elements[i].key);
+     .      .  149:             if (to_be_deleted == NULL){
+     .      .  150:                 fprintf(stderr, "Corruption: cannot lookup previously inserted key; strerror reports: %s\n", strerror(errno));
+     .      .  151:                 exit(2);
+     .      .  152:             }
+     .      .  153:             // SortedList_delete returns 1 on corruption
+     .      .  154:             if (SortedList_delete(to_be_deleted)){
+     .      .  155:                 fprintf(stderr, "Corruption: cannot delete previously found key; strerror reports: %s\n", strerror(errno));
+     .      .  156:                 exit(2);     
+     .      .  157:             }
+     .      .  158:             __sync_lock_release(&locks[hash]);
+     .      .  159:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .  160:         }
+     .      .  161:         else{
+     .      .  162:             to_be_deleted = SortedList_lookup(&list[hash], elements[i].key);
+     .      .  163:             if (to_be_deleted == NULL){
+     .      .  164:                 fprintf(stderr, "Corruption: cannot lookup previously inserted key; strerror reports: %s\n", strerror(errno));
+     .      .  165:                 exit(2);
+     .      .  166:             }
+     .      .  167:             // SortedList_delete returns 1 on corruption
+     .      .  168:             if (SortedList_delete(to_be_deleted)){
+     .      .  169:                 fprintf(stderr, "Corruption: cannot delete previously found key; strerror reports: %s\n", strerror(errno));
+     .      .  170:                 exit(2);     
+     .      .  171:             }
+     .      .  172:         }
+     .      .  173:     }
+     .      .  174:     return (void*) waittime;
+     .      .  175: }
+---
+     .      .  176: 
+     .      .  177: void record_data(){
+     .      .  178:     // 3 operations: insert, delete, lookup
+     .      .  179:     num_of_operations = num_of_threads * num_of_iterations * 3;
+     .      .  180:     avgtime = runtime / num_of_operations;
+ROUTINE ====================== run_threads in /u/cs/ugrad/rossmang/cs111/2b/lab2_list.c
+  1056   1196 Total samples (flat / cumulative)
+     .      .   43: 
+     .      .   44: int hash_function(const char* key){
+     .      .   45:     return ((int) *key) % num_of_lists;
+     .      .   46: }
+     .      .   47: 
+---
+     .      .   48: void *run_threads(void* arg){
+     .      .   49:     int i;
+     .      .   50:     // arg is the thread id, so the thread only handles own elements
+     .      .   51:     // each thread inserts num_of_iterations elements
+     .      .   52:     int current = *((int*) arg) * num_of_iterations;
+     .      .   53:     SortedListElement_t* to_be_deleted;
+     .      .   54:     struct timespec start, end;
+     .      .   55:     long long waittime = 0;
+     .      .   56:     // Insert into sublists of single, shared list
+     .      .   57:     for (i = current; i < current + num_of_iterations; i++){
+     .      .   58:         int hash = hash_function(elements[i].key);
+     .      .   59:         if (mutex_sync){
+     .      .   60:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .   61:             pthread_mutex_lock(&mutexes[hash]);
+     .      .   62:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .   63:             SortedList_insert(&list[hash], &elements[i]);
+     .      .   64:             pthread_mutex_unlock(&mutexes[hash]);
+     .      .   65:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .   66:         }
+     .      .   67:         else if (spinlock_sync){
+     .      .   68:             clock_gettime(CLOCK_MONOTONIC, &start);
+   564    564   69:             while (__sync_lock_test_and_set(&locks[hash], 1));
+     .      1   70:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .     79   71:             SortedList_insert(&list[hash], &elements[i]);
+     .      .   72:             __sync_lock_release(&locks[hash]);
+     .      .   73:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .   74:         }
+     .      .   75:         else{
+     .      .   76:             SortedList_insert(&list[hash], &elements[i]);
+     .      .   77:         }
+     .      .   78:     }
+     .      .   79:     // Get list length (and check for corruption)
+     .      .   80:     // If length of list is less than the num of iterations or -1, there is corruption
+     .      .   81:     int length = 0, sublength = 0;
+     .      .   82:     for (i = 0; i < num_of_lists; i++){
+     .      .   83:         if (mutex_sync){
+     .      .   84:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .   85:             pthread_mutex_lock(&mutexes[i]);
+     .      .   86:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .   87:             sublength = SortedList_length(&list[i]);
+     .      .   88:             if (sublength == -1){
+     .      .   89:                 fprintf(stderr, "Corruption: length of list is -1; strerror reports: %s\n", strerror(errno));
+     .      .   90:                 exit(2);
+     .      .   91:             }
+     .      .   92:             length += sublength;
+     .      .   93:             pthread_mutex_unlock(&mutexes[i]);
+     .      .   94:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .   95:         }
+     .      .   96:         else if (spinlock_sync){
+     .      .   97:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .   98:             while (__sync_lock_test_and_set(&locks[i], 1));
+     .      .   99:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .  100:             sublength = SortedList_length(&list[i]);
+     .      .  101:             if (sublength == -1){
+     .      .  102:                 fprintf(stderr, "Corruption: length of list is -1; strerror reports: %s\n", strerror(errno));
+     .      .  103:                 exit(2);
+     .      .  104:             }
+     .      .  105:             length += sublength;
+     .      .  106:             __sync_lock_release(&locks[i]);
+     .      .  107:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .  108:         }
+     .      .  109:         else {
+     .      .  110:             sublength = SortedList_length(&list[i]);
+     .      .  111:             if (sublength == -1){
+     .      .  112:                 fprintf(stderr, "Corruption: length of list is -1; strerror reports: %s\n", strerror(errno));
+     .      .  113:                 exit(2);
+     .      .  114:             }
+     .      .  115:             length += sublength;
+     .      .  116:         }
+     .      .  117:     }
+     .      .  118:     if (length < num_of_iterations){
+     .      .  119:         fprintf(stderr, "Corruption: length of list is less than number of iterations; strerror reports: %s\n", strerror(errno));
+     .      .  120:         exit(2);
+     .      .  121:     }
+     .      .  122: 
+     .      .  123:     // Lookup and delete each key that was previously inserted
+     .      .  124:     // If corruption is found (e.g., a key that was inserted cannot be found), exit(2)
+     .      .  125:     for (i = current; i < current + num_of_iterations; i++){
+     .      .  126:         int hash = hash_function(elements[i].key);
+     .      .  127:         if (mutex_sync){
+     .      .  128:             clock_gettime(CLOCK_MONOTONIC, &start);
+     .      .  129:             pthread_mutex_lock(&mutexes[hash]);
+     .      .  130:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .      .  131:             to_be_deleted = SortedList_lookup(&list[hash], elements[i].key);
+     .      .  132:             if (to_be_deleted == NULL){
+     .      .  133:                 fprintf(stderr, "Corruption: cannot lookup previously inserted key; strerror reports: %s\n", strerror(errno));
+     .      .  134:                 exit(2);
+     .      .  135:             }
+     .      .  136:             // SortedList_delete returns 1 on corruption
+     .      .  137:             if (SortedList_delete(to_be_deleted)){
+     .      .  138:                 fprintf(stderr, "Corruption: cannot delete previously found key; strerror reports: %s\n", strerror(errno));
+     .      .  139:                 exit(2);     
+     .      .  140:             }
+     .      .  141:             pthread_mutex_unlock(&mutexes[hash]);
+     .      .  142:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .  143:         }
+     .      .  144:         else if (spinlock_sync){
+     .      .  145:             clock_gettime(CLOCK_MONOTONIC, &start);
+   492    492  146:             while (__sync_lock_test_and_set(&locks[hash], 1));
+     .      .  147:             clock_gettime(CLOCK_MONOTONIC, &end);
+     .     60  148:             to_be_deleted = SortedList_lookup(&list[hash], elements[i].key);
+     .      .  149:             if (to_be_deleted == NULL){
+     .      .  150:                 fprintf(stderr, "Corruption: cannot lookup previously inserted key; strerror reports: %s\n", strerror(errno));
+     .      .  151:                 exit(2);
+     .      .  152:             }
+     .      .  153:             // SortedList_delete returns 1 on corruption
+     .      .  154:             if (SortedList_delete(to_be_deleted)){
+     .      .  155:                 fprintf(stderr, "Corruption: cannot delete previously found key; strerror reports: %s\n", strerror(errno));
+     .      .  156:                 exit(2);     
+     .      .  157:             }
+     .      .  158:             __sync_lock_release(&locks[hash]);
+     .      .  159:             waittime += (get_nanosec_from_timespec(&end) - get_nanosec_from_timespec(&start));
+     .      .  160:         }
+     .      .  161:         else{
+     .      .  162:             to_be_deleted = SortedList_lookup(&list[hash], elements[i].key);
+     .      .  163:             if (to_be_deleted == NULL){
+     .      .  164:                 fprintf(stderr, "Corruption: cannot lookup previously inserted key; strerror reports: %s\n", strerror(errno));
+     .      .  165:                 exit(2);
+     .      .  166:             }
+     .      .  167:             // SortedList_delete returns 1 on corruption
+     .      .  168:             if (SortedList_delete(to_be_deleted)){
+     .      .  169:                 fprintf(stderr, "Corruption: cannot delete previously found key; strerror reports: %s\n", strerror(errno));
+     .      .  170:                 exit(2);     
+     .      .  171:             }
+     .      .  172:         }
+     .      .  173:     }
+     .      .  174:     return (void*) waittime;
+     .      .  175: }
+---
+     .      .  176: 
+     .      .  177: void record_data(){
+     .      .  178:     // 3 operations: insert, delete, lookup
+     .      .  179:     num_of_operations = num_of_threads * num_of_iterations * 3;
+     .      .  180:     avgtime = runtime / num_of_operations;

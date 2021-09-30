@@ -1,0 +1,34 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab1b-client.c: The c source file used to create the lab1b-client executable
+    The client program opens a connection to a server (port specified with the mandatory --port=portnumber option), and then sends input 
+    from the keyboard to the socket, while echoing to the display, and inputs from the socket to the display.
+        The same noncanonical, no-echo terminal is used.
+    The client program takes an optional --log=filename option that records all data read from or written to the server, prefixed with 
+        "SENT # bytes:", or
+        "RECEIVED # bytes:"
+    The client program also takes an optional --compress option. This option, when used with the same --compress option for the server program, 
+        enables compression of all traffic from client to server and server to client.
+
+lab1b-server.c: The c source file used to create the lab1b-server executable
+    The server program connects with the client, receives the client's commands and sends them to the shell, and sends the client the 
+        outputs of those commands.
+            - Input received through the network socket is forwarded through the pipe to the shell.
+            - Input received from the shell pipes is  forwarded out to the network socket.
+    The server program listens on a network socket (port specified with the mandatory --port=portnumber option).
+    The server program also takes an optional --compress option, used together with the client's --compress option to enable compression of all
+        traffic from client to server and server to client.
+
+Makefile:
+    The default target compiles the lab1b-client and lab1b-server programs using GCC and 
+        compile-time error checking flags -Wall and -Wextra, along with the -lz flag to make use of zlib.
+    The clean target removes the lab1b-client and lab1b-server executables and .tar.gz tarball.
+    The dist target creates the tarball of the files for submission.
+
+README: Contains information about the submission files in the tarball
+
+Resources used:
+    man pages for socket(7) and zlib(3)
+    TA discussion slides

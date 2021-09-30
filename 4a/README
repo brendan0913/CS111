@@ -1,0 +1,20 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+Beaglebone serial number: BBGW20080488
+WIFI MAC address: 2CF7F106C5E7
+
+my_beaglebone.jpg: a picture of me holding my assembled Beaglebone, showing the front of the board
+
+connected.png: a screenshot from a USB terminal command session connected to my system, showing its name and configured network access using ifconfig
+
+copy.png: a screenshot from a local session in which I copy a hello world program from my laptop to my Beaglebone uisng pscp
+
+build_run.png: a screenshot from a WIFI SSH session in which I build and run a trivial hello world program on the Beaglebone
+
+git.png: a screenshot from a WIFI SSH session in which I install git and clone a repository
+
+Makefile: the dist target builds the tarball and the clean target removes the tarball, while the default target runs the dist target
+
+README: Contains the serial number of my Beaglebone and the WiFi MAC address, and a description of the submission files.

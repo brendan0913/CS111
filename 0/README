@@ -1,0 +1,59 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab0.c: the C source file that creates the exectuable program lab0
+    Copies its standard input to its standard output by reading from file descriptor 0 (stdin) until encountering an end of file and 
+    writing to file descriptor 1 (stdout)
+    Argument parsing is done with the getopt_long API.
+    Accepts two options with required arguments, --input[=filename] and --output[=filename], and two optional options --segfault and --catch
+    If input or output are used, the file is read for input and created for output using file redirection.
+        If --input is not used, the program reads from stdin.
+        If --output is not used, the program writes to stdout.
+    When the --segfault option is used, it creates a segmentation fault by dereferencing a null pointer.
+    When the --segfault and --catch options are used, it uses the signal API to catch the SIGSEGV signal and prints the message that the 
+        segfault is caught. 
+        Note: Since --catch catches the segfault, it should only be used along with --segfault. Otherwise, to the user, it does nothing.
+    Exit code 0: the program succeeds, copies standard input to standard output
+              1: when an unrecognized argument is used, a mesasge that tells the user the accepted arguments and their use is printed
+              2: unable to read the specified input file; an error message is printed using fprintf and strerror
+              3: unable to create the specified output file; an error message is printed using fprintf and strerror
+              4: successfully catches the segfault (when --segfault and --catch are used)
+
+Makefile: the default target compiles the lab0 program using GCC, compile-time error checking flags -Wall and -Wextra, and the debug flag -g.
+    The clean target removes the executable lab0, .tar.gz tarball, and other files made during make check (*.txt).
+    The dist target creates the tarball of the files for submission.
+    The check target runs the smoke tests for the following cases:
+        --input test: Checks if the correct exit code (0) is returned (it is successful as the input contents will be outputted to STDOUT)
+        --output test: Checks if the correct exit code (0) is returned (it is successful as the input contents will be copied to output file)
+        --input + --output test: Checks if the correct exit code (0) is returned and checks that the contents of the input file match the output 
+            file using the cmp command
+        invalid arg test: Checks if the correct exit code (1) is returned when there is an invalid argument (i.e., --dummy)
+        nonexistent input file: Checks if the correct exit code (2) is returned for a nonexistent file used as the input file
+        unopenable input file: Checks if the correct exit code (2) is returned for a file that cannot be opened (the user read permissions 
+            are removed using chmod u-r)
+        uncreatable output file: Checks if the correct exit code (3) is returned for a file that cannot be written to (the user write
+            permissions are removed using chmod u-w)
+        segfault test: Checks if the exit code 139 is returned when --segfault is used without --catch
+        catch segfault test: Checks if the correct exit code (4) is returned when the --segfault and --catch options are used
+        overwite test: Checks that for an output file that is not empty, the input file's contents are still correctly copied over to the output
+            file
+            
+backtrace.png: shows a gdb session of the lab0 executable that shows a segmentation fault using the r --segfault command 
+    and its stack trace using the bt and bt full command; the bt full command also shows the local variables.
+
+breakpoint.png: shows a gdb session of the lab0 exectuable that shows that the char* ptr is NULL and that the memory cannot be accessed.
+    The b 50 command sets a breakpoint at line 50 (where the bad assignment of storing through the null pointer is in the force_segfault() 
+    subroutine), and ./lab0 --segfault runs until it hits this breakpoint.
+    The p ptr and p *ptr commands print the address of the ptr and show that the variable is null. The segfault is caused by trying
+    to dereference the null pointer, and this error can be seen from the gdb session when running the command p *ptr.
+
+README: Contains information about the included files in the submission tarball
+
+Resources used:
+For understanding getopt_long
+https://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
+For understanding input/output redirection
+http://web.cs.ucla.edu/~harryxu/courses/111/winter21/ProjectGuide/fd_juggling.html
+For learning the backtrace command in gdb
+https://sourceware.org/gdb/current/onlinedocs/gdb/Backtrace.html

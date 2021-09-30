@@ -1,0 +1,30 @@
+NAME: Brendan Rossmango
+EMAIL: brendan0913@ucla.edu
+ID: 505370692
+
+lab4b.c: C source file that makes the lab4b executable
+	Builds and runs on your embedded system.
+	Uses the MRAA library AIO functions to get readings from the temperature sensor
+	Samples a temperature sensor at a configurable rate, which defaults to 1/second and is controlled 
+		by an optional --period=# command line parameter that specifies a sampling interval in seconds
+	Converts the sensor value into a temperature which is, by default, reported in degrees Fahrenheit, 
+		or in Celsius if specified with an optional --scale=C (or --scale=F) command line parameter
+	Creates a report and writes to stdout for each sample that includes:
+		time of the sample (e.g. 17:25:58) in the local timezone, and
+		a decimal temperature in degrees and tenths (e.g. 98.6)
+	Appends that report to a logfile if that the logfile is specified with an optional --log=filename parameter
+	Uses the MRAA library GPIO functions to sample the state of the button; when it is pushed, outputs (and logs)
+		a final sample with the time and the string SHUTDOWN (instead of a temperature)
+
+Makefile:
+	The default target makes the lab4b executable with compile-time error checking flags -Wall and -Wextra.
+	The clean target removes the lab4b executable and the tar.gz tarball.
+	The dist target makes the tarball for submission.
+	The check target runs the smoketests.
+
+README: Contains information about the files in the submission tarball
+
+Resources used:
+ - Discussion slides
+ - https://iotdk.intel.com/docs/master/mraa/
+ - https://www.tutorialspoint.com/c_standard_library/c_function_fgets.htm
